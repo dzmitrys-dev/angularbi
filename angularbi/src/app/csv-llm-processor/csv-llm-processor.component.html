@@ -17,15 +17,35 @@
     }
   </div>
 
-  <!-- Prompt Template -->
+  <!-- Global Dataset Prompt -->
+  <div class="global-prompt-section">
+    <label for="global-prompt">Dataset Analysis Prompt (use &#123;data&#125; for all CSV rows):</label>
+    <textarea
+      id="global-prompt"
+      [ngModel]="globalPrompt()"
+      (ngModelChange)="globalPrompt.set($event)"
+      placeholder="e.g., What is the total price of all products? Data: &#123;data&#125;"
+      rows="2"
+      [disabled]="isProcessing()"
+    ></textarea>
+    <button
+      (click)="processGlobalPrompt()"
+      [disabled]="!hasData() || !globalPrompt() || isProcessing()"
+      class="global-process-btn"
+    >
+      Analyze Dataset
+    </button>
+  </div>
+
+  <!-- Row-level Prompt Template -->
   <div class="prompt-section">
-    <label for="prompt">Prompt Template (use &#123;line&#125; for CSV row):</label>
-    <textarea 
-      id="prompt"
+    <label for="row-prompt">Row Analysis Prompt (use &#123;line&#125; for CSV row):</label>
+    <textarea
+      id="row-prompt"
       [ngModel]="promptTemplate()"
       (ngModelChange)="promptTemplate.set($event)"
       placeholder="e.g., Summarize this data: &#123;line&#125;"
-      rows="3"
+      rows="2"
       [disabled]="isProcessing()"
     ></textarea>
   </div>
@@ -79,10 +99,18 @@
     <div class="error">{{ error() }}</div>
   }
 
+  <!-- Global Result -->
+  @if (globalResult()) {
+    <div class="global-result-section">
+      <h3>Dataset Analysis Result</h3>
+      <div class="global-result-content">{{ globalResult() }}</div>
+    </div>
+  }
+
   <!-- Results Table -->
   @if (hasData()) {
     <div class="table-section">
-      <h3>Results ({{ csvData().length }} rows)</h3>
+      <h3>Row Results ({{ csvData().length }} rows)</h3>
       <table>
         <thead>
           <tr>

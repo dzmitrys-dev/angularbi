@@ -19,10 +19,12 @@ export class CsvLlmProcessorComponent {
   private llmService = inject(LlmService);
 
   promptTemplate = model('');
+  globalPrompt = model('');
   csvFile = signal<File | null>(null);
   csvData = signal<CsvRow[]>([]);
   headers = signal<string[]>([]);
   results = signal<Map<number, string>>(new Map());
+  globalResult = signal<string>('');
   isProcessing = signal(false);
   processingProgress = signal(0);
   error = signal<string | null>(null);
@@ -93,11 +95,37 @@ export class CsvLlmProcessorComponent {
     }
   }
 
+  async processGlobalPrompt(): Promise<void> {
+    if (!this.hasData() || !this.globalPrompt()) return;
+
+    this.isProcessing.set(true);
+    this.error.set(null);
+    
+    try {
+      // Summarize data structure for LLM analysis to prevent context overflow
+      const headersList = this.headers().join(', ');
+      const sampleRows = this.csvData().slice(0, 5).map(row => Object.values(row).join(' | '));
+      const rowCount = this.csvData().length;
+      
+      const allData = `CSV Structure: Headers: ${headersList}\nTotal rows: ${rowCount}\n\nSample rows (first 5):\n${sampleRows.join('\n')}${rowCount > 5 ? '\n\n... and ' + (rowCount - 5) + ' more rows' : ''}`;
+      
+      const fullPrompt = this.globalPrompt().replace(/\{data\}/g, allData);
+      
+      const result = await this.llmService.generate(fullPrompt);
+      this.globalResult.set(result);
+    } catch (err: any) {
+      this.error.set(err.message);
+    } finally {
+      this.isProcessing.set(false);
+    }
+  }
+
   clearData(): void {
     this.csvFile.set(null);
     this.csvData.set([]);
     this.headers.set([]);
     this.results.set(new Map());
+    this.globalResult.set('');
     this.processingProgress.set(0);
     this.error.set(null);
   }
