@@ -20,7 +20,7 @@ export class LlmService {
   private enginePromise = signal<Promise<any> | null>(null);
   private engineRef: any = null;
 
-  async getEngine(modelId: string = 'Llama-3.2-1B-Instruct-q4f16_1-MLC'): Promise<any> {
+  async getEngine(modelId: string = 'Llama-3.2-1B-Instruct-q4f32_1-MLC'): Promise<any> {
     if (this.engineRef) {
       return this.engineRef;
     }

@@ -185,16 +185,21 @@
 <main class="main">
   <div class="gpu-check">
     <h2>WebGPU System Check</h2>
-    @if (webGPUSupported === true) {
-      <p class="success">✅ WebGPU is supported in your browser!</p>
-    } @else if (webGPUSupported === false) {
-      <p class="error">❌ WebGPU not supported - LLM features will be disabled</p>
-      <p>Please check: <a href="https://webgpureport.org" target="_blank">webgpureport.org</a></p>
-      <ul>
-        <li>Use Chrome 113+ or Edge 113+</li>
-        <li>Enable WebGPU flag if needed</li>
-        <li>Ensure your GPU/drivers are updated</li>
-      </ul>
+    @if (webGPUSupported() === true) {
+      <p class="success">✅ WebGPU initialized successfully!</p>
+    } @else if (webGPUSupported() === false) {
+      <div class="error">
+        <p class="error">❌ WebGPU initialization failed - LLM acceleration disabled</p>
+        <p>Troubleshooting steps:</p>
+        <ul>
+          <li>Use latest Chrome/Edge (v113+)</li>
+          <li>Enable chrome://flags/#enable-unsafe-webgpu</li>
+          <li>Update GPU drivers</li>
+          <li>Check <a href="https://webgpureport.org" target="_blank">WebGPU Report</a></li>
+          <li>Verify discrete GPU is active (if laptop)</li>
+        </ul>
+        <p>Required features: WebGPU API, ASTC texture compression</p>
+      </div>
     } @else {
       <p>Checking WebGPU support...</p>
     }
