@@ -183,6 +183,23 @@
 </style>
 
 <main class="main">
+  <div class="gpu-check">
+    <h2>WebGPU System Check</h2>
+    @if (webGPUSupported === true) {
+      <p class="success">✅ WebGPU is supported in your browser!</p>
+    } @else if (webGPUSupported === false) {
+      <p class="error">❌ WebGPU not supported - LLM features will be disabled</p>
+      <p>Please check: <a href="https://webgpureport.org" target="_blank">webgpureport.org</a></p>
+      <ul>
+        <li>Use Chrome 113+ or Edge 113+</li>
+        <li>Enable WebGPU flag if needed</li>
+        <li>Ensure your GPU/drivers are updated</li>
+      </ul>
+    } @else {
+      <p>Checking WebGPU support...</p>
+    }
+  </div>
+  
   <div class="content">
     <div class="left-side">
       <svg

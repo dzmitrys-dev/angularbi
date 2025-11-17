@@ -1,0 +1,108 @@
+<div class="container">
+  <h2>CSV LLM Processor</h2>
+  
+  <!-- Upload CSV -->
+  <div class="upload-section">
+    <label for="csvFile">Upload CSV:</label>
+    <input 
+      #csvInput
+      type="file" 
+      id="csvFile" 
+      accept=".csv" 
+      (change)="onFileSelected($event)"
+      [disabled]="isProcessing()"
+    />
+    @if (csvFile()) {
+      <span class="file-name">{{ csvFile()?.name }}</span>
+    }
+  </div>
+
+  <!-- Prompt Template -->
+  <div class="prompt-section">
+    <label for="prompt">Prompt Template (use &#123;line&#125; for CSV row):</label>
+    <textarea 
+      id="prompt"
+      [ngModel]="promptTemplate()"
+      (ngModelChange)="promptTemplate.set($event)"
+      placeholder="e.g., Summarize this data: &#123;line&#125;"
+      rows="3"
+      [disabled]="isProcessing()"
+    ></textarea>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button 
+      (click)="processCsv()" 
+      [disabled]="!hasData() || !promptTemplate() || isProcessing()"
+      class="process-btn"
+    >
+      @if (isProcessing()) {
+        Processing...
+      } @else {
+        Process with LLM
+      }
+    </button>
+    <button (click)="clearData()" [disabled]="isProcessing()" class="clear-btn">Clear</button>
+  </div>
+
+  <!-- Engine Loading Progress -->
+  @if (loadingProgress()) {
+    <div class="progress-section">
+      <h3>LLM Engine Loading...</h3>
+      <div class="progress-bar">
+        <div 
+          class="progress-fill" 
+          [style.width.%]="loadingProgress()!.progress * 100"
+        ></div>
+      </div>
+      <p>{{ loadingProgress()!.text }}</p>
+    </div>
+  }
+
+  <!-- Processing Progress -->
+  @if (isProcessing()) {
+    <div class="progress-section">
+      <h3>Processing CSV rows...</h3>
+      <div class="progress-bar">
+        <div 
+          class="progress-fill" 
+          [style.width.%]="processingProgress()"
+        ></div>
+      </div>
+      <p>{{ processingProgress() | number:'1.0-0' }}%</p>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  <!-- Results Table -->
+  @if (hasData()) {
+    <div class="table-section">
+      <h3>Results ({{ csvData().length }} rows)</h3>
+      <table>
+        <thead>
+          <tr>
+            @for (header of headers(); track header) {
+              <th>{{ header }}</th>
+            }
+            <th>LLM Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of csvData(); track $index) {
+            <tr>
+              @for (header of headers(); track header) {
+                <td>{{ row[header] }}</td>
+              }
+              <td>{{ getResult($index) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
