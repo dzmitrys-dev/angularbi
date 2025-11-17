@@ -52,8 +52,8 @@
 
   <!-- Controls -->
   <div class="controls">
-    <button 
-      (click)="processCsv()" 
+    <button
+      (click)="processCsv()"
       [disabled]="!hasData() || !promptTemplate() || isProcessing()"
       class="process-btn"
     >
@@ -63,6 +63,9 @@
         Process with LLM
       }
     </button>
+    @if (isProcessing()) {
+      <button (click)="stopProcessing()" class="stop-btn">Stop Processing</button>
+    }
     <button (click)="clearData()" [disabled]="isProcessing()" class="clear-btn">Clear</button>
   </div>
 

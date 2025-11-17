@@ -27,6 +27,7 @@ export class CsvLlmProcessorComponent {
   globalResult = signal<string>('');
   isProcessing = signal(false);
   processingProgress = signal(0);
+  shouldStop = signal(false);
   error = signal<string | null>(null);
 
   // Computed
@@ -77,20 +78,67 @@ export class CsvLlmProcessorComponent {
     const resultsMap = new Map<number, string>();
 
     try {
+      console.log(`🚀 Starting CSV processing: ${data.length} rows`);
+      console.table(this.headers());
+      this.shouldStop.set(false);
+
       for (let i = 0; i < data.length; i++) {
+        // Check if stop was requested
+        if (this.shouldStop()) {
+          console.log(`⛔ Processing stopped by user at row ${i + 1}/${data.length}`);
+          this.error.set('Processing stopped by user');
+          break;
+        }
+        
         const row = data[i];
+        
+        // Log current row being processed
+        console.log(`\n📊 Processing row ${i + 1}/${data.length}:`);
+        console.table([row]);
+        
+        // Create enhanced prompt with column context
+        const headersContext = `CSV Columns: ${this.headers().join(', ')}`;
         const line = Object.values(row).join(' | ');
-        const fullPrompt = this.promptTemplate().replace(/\{line\}/g, line);
-
-        const result = await this.llmService.generate(fullPrompt);
-        resultsMap.set(i, result);
-
-        this.processingProgress.set(((i + 1) / data.length) * 100);
+        const fullPrompt = `${headersContext}\n\nRow data: ${line}\n\n${this.promptTemplate().replace(/\{line\}/g, line)}`;
+        
+        console.log('🤖 Generated prompt:', fullPrompt);
+        console.log('📏 Prompt length:', fullPrompt.length);
+        
+        // Update UI immediately with "processing" state
+        this.results.update(map => new Map(map).set(i, '⏳ Processing...'));
+        console.log(`🔄 Updated UI for row ${i + 1} to processing state`);
+        
+        try {
+          console.log(`⏱️  Starting LLM generation for row ${i + 1}...`);
+          const result = await this.llmService.generate(fullPrompt, 120000);
+          console.log(`✅ LLM returned for row ${i + 1}`);
+          
+          // Update result immediately
+          resultsMap.set(i, result);
+          this.results.update(map => new Map(map).set(i, result));
+          console.log(`✅ UI updated with result for row ${i + 1}`);
+          
+          console.log(`✅ Row ${i + 1} completed:`, result.substring(0, 200) + (result.length > 200 ? '...' : ''));
+          
+          this.processingProgress.set(((i + 1) / data.length) * 100);
+          console.log(`📈 Progress: ${((i + 1) / data.length) * 100}%`);
+        } catch (rowError: any) {
+          console.error(`❌ Error processing row ${i + 1}:`, rowError);
+          const errorMsg = `Error: ${rowError.message || 'Unknown error'}`;
+          this.results.update(map => new Map(map).set(i, errorMsg));
+          // Continue processing instead of stopping on error
+          console.log(`⚠️ Continuing with next row despite error on row ${i + 1}`);
+          continue;
+        }
       }
-      this.results.set(resultsMap);
+      
+      console.log('🎉 CSV processing completed successfully!');
+      console.log('📋 Final results:', Array.from(resultsMap.entries()));
     } catch (err: any) {
-      this.error.set(err.message);
+      console.error('❌ Processing error:', err);
+      this.error.set(err.message || 'Unknown error');
     } finally {
+      console.log('🏁 Processing finished');
       this.isProcessing.set(false);
     }
   }
@@ -111,13 +159,20 @@ export class CsvLlmProcessorComponent {
       
       const fullPrompt = this.globalPrompt().replace(/\{data\}/g, allData);
       
-      const result = await this.llmService.generate(fullPrompt);
+      console.log('🌐 Processing global prompt with 120 second timeout');
+      const result = await this.llmService.generate(fullPrompt, 120000);
       this.globalResult.set(result);
     } catch (err: any) {
-      this.error.set(err.message);
+      console.error('❌ Global prompt error:', err);
+      this.error.set(err.message || 'Error processing global prompt');
     } finally {
       this.isProcessing.set(false);
     }
+  }
+
+  stopProcessing(): void {
+    console.log('🛑 Stop processing requested by user');
+    this.shouldStop.set(true);
   }
 
   clearData(): void {
@@ -127,6 +182,7 @@ export class CsvLlmProcessorComponent {
     this.results.set(new Map());
     this.globalResult.set('');
     this.processingProgress.set(0);
+    this.shouldStop.set(false);
     this.error.set(null);
   }
 
