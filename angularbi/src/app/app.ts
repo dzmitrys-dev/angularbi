@@ -32,8 +32,8 @@ export class App {
         return;
       }
 
-      // Check for required features
-      const features = adapter.features.values();
+      // Check for required features - WebGPU features.values() returns iterator
+      const features = Array.from(adapter.features.values());
       const requiredFeatures = ['texture-compression-astc'];
       const missingFeatures = requiredFeatures.filter(f => !features.includes(f));
       
